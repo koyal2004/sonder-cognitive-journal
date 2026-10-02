@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Sonder — Cognitive Journal</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;1,9..144,500&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#f6f2ea; --ink:#2a2620; --muted:#8a8372; --card:#ffffff;
+  --line:rgba(42,38,32,0.1); --accent:#7c4a3a; --accent2:#4a6b5c;
+  --warn:#b3763b;
+  box-sizing:border-box; padding-top:env(safe-area-inset-top,0px); padding-bottom:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#161310; --ink:#efe9de; --muted:#9c9484; --card:#1f1c17;
+    --line:rgba(239,233,222,0.1); --accent:#e0a98d; --accent2:#8fbba8;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#161310; --ink:#efe9de; --muted:#9c9484; --card:#1f1c17;
+  --line:rgba(239,233,222,0.1); --accent:#e0a98d; --accent2:#8fbba8;
+}
+*{box-sizing:border-box;}
+html{scroll-padding-top:env(safe-area-inset-top,0px); height:100%;}
+body{
+  margin:0; min-height:100%; background:var(--bg); color:var(--ink);
+  font-family:'Inter',sans-serif; display:flex; flex-direction:column;
+}
+.top{
+  display:flex; align-items:center; justify-content:space-between;
+  padding:18px 24px; padding-top:calc(18px + env(safe-area-inset-top,0px));
+  border-bottom:1px solid var(--line);
+}
+.brand{display:flex; align-items:center; gap:10px;}
+.brand-mark{width:30px;height:30px;border-radius:8px;background:var(--accent);display:flex;align-items:center;justify-content:center;color:#fff;font-family:'Fraunces',serif;font-size:16px;}
+.brand-text h1{font-family:'Fraunces',serif; font-size:17px; margin:0; font-weight:500;}
+.brand-text p{margin:0; font-size:11px; letter-spacing:.08em; text-transform:uppercase; color:var(--muted);}
+nav{display:flex; gap:4px; background:var(--card); border:1px solid var(--line); border-radius:10px; padding:4px;}
+nav button{
+  border:none; background:transparent; color:var(--muted); font:inherit; font-size:13px;
+  padding:7px 14px; border-radius:7px; cursor:pointer; font-weight:500;
+}
+nav button.active{background:var(--accent); color:#fff;}
+main{flex:1; width:100%; max-width:1100px; margin:0 auto; padding:28px 20px 40px; display:flex; flex-direction:column; gap:20px; overflow-x:hidden;}
+.view{display:none;}
+.view.active{display:flex; flex-direction:column; gap:20px;}
+.headline{font-family:'Fraunces',serif; font-style:italic; font-weight:500; font-size:clamp(26px,4vw,38px); margin:4px 0 0;}
+.sub{color:var(--muted); font-size:13.5px; margin:0;}
+.chat-layout{display:grid; grid-template-columns:1.6fr 1fr; gap:20px; align-items:start;}
+@media (max-width:760px){.chat-layout{grid-template-columns:1fr;}}
+.panel{background:var(--card); border:1px solid var(--line); border-radius:16px; overflow:hidden; display:flex; flex-direction:column;}
+.thread{height:min(56vh,480px); overflow-y:auto; padding:20px; display:flex; flex-direction:column; gap:14px;}
+.msg{max-width:82%; padding:11px 15px; border-radius:14px; font-size:14.5px; line-height:1.5;}
+.msg.user{align-self:flex-end; background:var(--accent); color:#fff; border-bottom-right-radius:4px;}
+.msg.assistant{align-self:flex-start; background:var(--bg); border:1px solid var(--line); border-bottom-left-radius:4px;}
+.msg.assistant .label{display:block; font-size:10.5px; letter-spacing:.08em; text-transform:uppercase; color:var(--muted); margin-bottom:4px;}
+.composer{display:flex; gap:8px; padding:14px; border-top:1px solid var(--line);}
+.composer textarea{
+  flex:1; resize:none; border:1px solid var(--line); border-radius:10px; padding:10px 12px;
+  font:inherit; font-size:14px; background:var(--bg); color:var(--ink); max-height:90px;
+}
+.composer textarea:focus{outline:2px solid var(--accent2); outline-offset:-1px;}
+.composer button{
+  border:none; background:var(--accent); color:#fff; border-radius:10px; padding:0 18px;
+  font:inherit; font-weight:600; font-size:13.5px; cursor:pointer;
+}
+.composer button:disabled{opacity:.5; cursor:default;}
+.readout{padding:20px; display:flex; flex-direction:column; gap:16px;}
+.readout h2{font-family:'Fraunces',serif; font-weight:500; font-size:16px; margin:0;}
+.readout .empty{color:var(--muted); font-size:13px; font-style:italic;}
+.grid2{display:grid; grid-template-columns:1fr 1fr; gap:10px;}
+.stat{background:var(--bg); border:1px solid var(--line); border-radius:10px; padding:10px 12px;}
+.stat .k{font-size:10.5px; letter-spacing:.06em; text-transform:uppercase; color:var(--muted); display:flex; align-items:center; gap:5px;}
+.stat .v{font-family:'Fraunces',serif; font-size:19px; margin-top:2px; color:var(--accent);}
+.tag{display:inline-block; font-size:11px; padding:4px 9px; border-radius:100px; background:var(--accent2); color:#fff; font-weight:600;}
+.confbar{height:5px; border-radius:3px; background:var(--line); overflow:hidden; margin-top:8px;}
+.confbar i{display:block; height:100%; background:var(--warn);}
+.cards3{display:grid; grid-template-columns:repeat(3,1fr); gap:14px;}
+@media (max-width:700px){.cards3{grid-template-columns:1fr 1fr;}}
+.card{background:var(--card); border:1px solid var(--line); border-radius:16px; padding:18px;}
+.card .k{font-size:10.5px; letter-spacing:.07em; text-transform:uppercase; color:var(--muted);}
+.card .v{font-family:'Fraunces',serif; font-size:26px; margin:6px 0 2px;}
+.card .d{font-size:12px; color:var(--muted);}
+.barlist{display:flex; flex-direction:column; gap:10px; margin-top:12px;}
+.barrow .lbl{display:flex; justify-content:space-between; font-size:13px; margin-bottom:4px;}
+.barrow .track{height:8px; border-radius:4px; background:var(--line); overflow:hidden;}
+.barrow .fill{height:100%; border-radius:4px; background:var(--accent);}
+.empty-state{text-align:center; color:var(--muted); padding:40px 20px; font-size:13.5px;}
+::-webkit-scrollbar{width:6px;} ::-webkit-scrollbar-thumb{background:var(--line); border-radius:3px;}
+</style>
+</head>
+<body>
+
+<div class="top">
+  <div class="brand">
+    <div class="brand-mark">S</div>
+    <div class="brand-text"><h1>Sonder</h1><p>Cognitive Journal</p></div>
+  </div>
+  <nav>
+    <button id="tab-chat" class="active">Conversation</button>
+    <button id="tab-analytics">Analytics</button>
+  </nav>
+</div>
+
+<main>
+  <div id="view-chat" class="view active">
+    <div>
+      <h2 class="headline">Make space for the thought.</h2>
+      <p class="sub">Write freely — each message is read for emotion, intent and intensity before Sonder replies.</p>
+    </div>
+    <div class="chat-layout">
+      <div class="panel">
+        <div class="thread" id="thread"></div>
+        <div class="composer">
+          <textarea id="input" rows="1" placeholder="What's on your mind?"></textarea>
+          <button id="send">Send</button>
+        </div>
+      </div>
+      <div class="panel readout" id="readout">
+        <h2>Cognitive readout</h2>
+        <p class="empty">Send a message to see the live analysis.</p>
+      </div>
+    </div>
+  </div>
+
+  <div id="view-analytics" class="view">
+    <div>
+      <h2 class="headline">Your inner weather.</h2>
+      <p class="sub">A private pattern library, built from everything you've written here.</p>
+    </div>
+    <div id="analytics-body"></div>
+  </div>
+</main>
+
+<script>
+const STORE_KEY = "wayfare_entries_v1";
+let entries = [];
+try{ entries = JSON.parse(localStorage.getItem(STORE_KEY) || "[]"); }catch(e){ entries = []; }
+
+function save(){
+  try{ localStorage.setItem(STORE_KEY, JSON.stringify(entries.slice(-200))); }catch(e){}
+}
+
+const threadEl = document.getElementById('thread');
+const readoutEl = document.getElementById('readout');
+const inputEl = document.getElementById('input');
+const sendBtn = document.getElementById('send');
+
+function renderThread(){
+  threadEl.innerHTML = "";
+  entries.forEach(e=>{
+    const u = document.createElement('div'); u.className='msg user'; u.textContent = e.message;
+    threadEl.appendChild(u);
+    if(e.response){
+      const a = document.createElement('div'); a.className='msg assistant';
+      a.innerHTML = '<span class="label">Sonder</span>' + escapeHtml(e.response);
+      threadEl.appendChild(a);
+    }
+  });
+  threadEl.scrollTop = threadEl.scrollHeight;
+}
+function escapeHtml(s){ const d=document.createElement('div'); d.textContent=s; return d.innerHTML; }
+
+function renderReadout(e){
+  if(!e){ readoutEl.innerHTML = '<h2>Cognitive readout</h2><p class="empty">Send a message to see the live analysis.</p>'; return; }
+  const pct = Math.round((e.confidence||0.7)*100);
+  readoutEl.innerHTML = `
+    <h2>Cognitive readout</h2>
+    <div class="grid2">
+      <div class="stat"><div class="k">Emotion</div><div class="v">${e.emotion}</div></div>
+      <div class="stat"><div class="k">Intent</div><div class="v">${e.intent}</div></div>
+      <div class="stat"><div class="k">Intensity</div><div class="v">${e.intensity}</div></div>
+      <div class="stat"><div class="k">Priority</div><div class="v">${e.priority}</div></div>
+    </div>
+    <div>
+      <span class="tag">${e.tone} tone</span>
+      <div class="confbar"><i style="width:${pct}%"></i></div>
+      <p class="sub" style="margin-top:6px;">${pct}% confidence</p>
+    </div>`;
+}
+
+async function analyze(message, history){
+  try {
+    const response = await fetch("https://sonder-cognitive-journal.onrender.com/analyze", {
+      method: "POST",
+      headers: {"Content-Type":"application/json"},
+      body: JSON.stringify({
+        message: message,
+        history: history.slice(-4)
+      })
+    });
+
+    if(!response.ok){ throw new Error("Server error"); }
+
+    const result = await response.json();
+    if(result && result.emotion){ return result; }
+    throw new Error("Invalid response");
+  } catch(err) {
+    console.error("Gemini analysis failed:", err);
+    return {
+      emotion:"neutral", confidence:0.4, intensity:"Low",
+      intent:"General", tone:"Plain", priority:"Balanced",
+      response:"I'm not able to reach the analysis model right now, but I've noted what you wrote."
+    };
+  }
+}
+
+
+async function handleSend(){
+  const message = inputEl.value.trim();
+  if(!message) return;
+  inputEl.value = ""; sendBtn.disabled = true;
+  const placeholder = {message, response:null};
+  entries.push(placeholder);
+  renderThread();
+  const analysis = await analyze(message, entries.slice(0,-1));
+  Object.assign(placeholder, analysis, {ts: Date.now()});
+  save();
+  renderThread();
+  renderReadout(placeholder);
+  sendBtn.disabled = false;
+  inputEl.focus();
+}
+
+sendBtn.addEventListener('click', handleSend);
+inputEl.addEventListener('keydown', e=>{
+  if(e.key==='Enter' && !e.shiftKey){ e.preventDefault(); handleSend(); }
+});
+
+// --- Tabs ---
+const tabChat = document.getElementById('tab-chat');
+const tabAnalytics = document.getElementById('tab-analytics');
+const viewChat = document.getElementById('view-chat');
+const viewAnalytics = document.getElementById('view-analytics');
+tabChat.addEventListener('click', ()=>{
+  tabChat.classList.add('active'); tabAnalytics.classList.remove('active');
+  viewChat.classList.add('active'); viewAnalytics.classList.remove('active');
+});
+tabAnalytics.addEventListener('click', ()=>{
+  tabAnalytics.classList.add('active'); tabChat.classList.remove('active');
+  viewAnalytics.classList.add('active'); viewChat.classList.remove('active');
+  renderAnalytics();
+});
+
+function renderAnalytics(){
+  const body = document.getElementById('analytics-body');
+  const done = entries.filter(e=>e.emotion);
+  if(done.length === 0){
+    body.innerHTML = '<div class="empty-state">No entries yet — write in Conversation and your patterns will show up here.</div>';
+    return;
+  }
+  const count = k=>{ const m={}; done.forEach(e=>{ m[e[k]]=(m[e[k]]||0)+1; }); return m; };
+  const top = m => Object.entries(m).sort((a,b)=>b[1]-a[1])[0][0];
+  const emoCounts = count('emotion');
+  const intentCounts = count('intent');
+  const topEmotion = top(emoCounts);
+  const topIntent = top(intentCounts);
+
+  const barlist = (map) => Object.entries(map).sort((a,b)=>b[1]-a[1]).map(([k,v])=>{
+    const pct = Math.round(v/done.length*100);
+    return `<div class="barrow"><div class="lbl"><span>${k}</span><span>${v}</span></div><div class="track"><div class="fill" style="width:${pct}%"></div></div></div>`;
+  }).join('');
+
+  body.innerHTML = `
+    <div class="cards3">
+      <div class="card"><div class="k">Conversations</div><div class="v">${String(done.length).padStart(2,'0')}</div><div class="d">across this journal</div></div>
+      <div class="card"><div class="k">Most present emotion</div><div class="v">${topEmotion}</div><div class="d">the signal that returns</div></div>
+      <div class="card"><div class="k">Common intent</div><div class="v">${topIntent}</div><div class="d">what you come here to do</div></div>
+    </div>
+    <div class="chat-layout">
+      <div class="panel" style="padding:18px;"><h2 style="font-family:'Fraunces',serif;font-weight:500;margin:0 0 4px;">What has been present</h2><p class="sub">Emotional register</p><div class="barlist">${barlist(emoCounts)}</div></div>
+      <div class="panel" style="padding:18px;"><h2 style="font-family:'Fraunces',serif;font-weight:500;margin:0 0 4px;">What you were reaching for</h2><p class="sub">Underlying intent</p><div class="barlist">${barlist(intentCounts)}</div></div>
+    </div>`;
+}
+
+renderThread();
+renderReadout(entries.length ? entries[entries.length-1] : null);
+</script>
+</body>
+</html>
