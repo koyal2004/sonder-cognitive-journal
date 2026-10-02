@@ -137,12 +137,11 @@ main{flex:1; width:100%; max-width:1100px; margin:0 auto; padding:28px 20px 40px
 </main>
 
 <script>
-const STORE_KEY = "wayfare_entries_v1";
+// Start a fresh conversation every time the website is opened
 let entries = [];
-try{ entries = JSON.parse(localStorage.getItem(STORE_KEY) || "[]"); }catch(e){ entries = []; }
 
 function save(){
-  try{ localStorage.setItem(STORE_KEY, JSON.stringify(entries.slice(-200))); }catch(e){}
+  // Conversation is kept only while this page is open.
 }
 
 const threadEl = document.getElementById('thread');
@@ -184,29 +183,75 @@ function renderReadout(e){
 }
 
 async function analyze(message, history){
-  try {
-    const response = await fetch("https://sonder-cognitive-journal.onrender.com/analyze", {
-      method: "POST",
-      headers: {"Content-Type":"application/json"},
-      body: JSON.stringify({
-        message: message,
-        history: history.slice(-4)
-      })
-    });
 
-    if(!response.ok){ throw new Error("Server error"); }
+  const maxAttempts = 3;
 
-    const result = await response.json();
-    if(result && result.emotion){ return result; }
-    throw new Error("Invalid response");
-  } catch(err) {
-    console.error("Gemini analysis failed:", err);
-    return {
-      emotion:"neutral", confidence:0.4, intensity:"Low",
-      intent:"General", tone:"Plain", priority:"Balanced",
-      response:"I'm not able to reach the analysis model right now, but I've noted what you wrote."
-    };
+  for(let attempt = 1; attempt <= maxAttempts; attempt++){
+
+    try{
+
+      const response = await fetch(
+        "https://sonder-cognitive-journal.onrender.com/analyze",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type":"application/json"
+          },
+          body: JSON.stringify({
+            message: message,
+            history: history.slice(-4)
+          })
+        }
+      );
+
+      if(response.ok){
+
+        const result = await response.json();
+
+        if(result && result.emotion){
+          return result;
+        }
+
+      }
+
+      console.warn(
+        "Gemini request failed. Attempt:",
+        attempt
+      );
+
+    }catch(err){
+
+      console.error(
+        "Gemini connection error. Attempt:",
+        attempt,
+        err
+      );
+
+    }
+
+    // Wait before trying again
+    if(attempt < maxAttempts){
+
+      const delay = attempt * 1500;
+
+      await new Promise(
+        resolve => setTimeout(resolve, delay)
+      );
+
+    }
+
   }
+
+  // Only show fallback after all retry attempts fail
+  return {
+    emotion:"neutral",
+    confidence:0.4,
+    intensity:"Low",
+    intent:"General",
+    tone:"Plain",
+    priority:"Balanced",
+    response:"I'm having trouble connecting to the analysis service right now. Please try sending your message again."
+  };
 }
 
 
