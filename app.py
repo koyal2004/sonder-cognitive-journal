@@ -23,10 +23,16 @@ def home():
 
 @app.route("/analyze", methods=["POST"])
 def analyze():
+
     data = request.get_json() or {}
 
-    message = data.get("message", "")
+    message = data.get("message", "").strip()
     history = data.get("history", [])
+
+    if not message:
+        return jsonify({
+            "error": "Message cannot be empty"
+        }), 400
 
     prompt = f"""
 You are the cognitive analysis engine for a journaling application.
@@ -55,11 +61,19 @@ User message:
         "gemini-flash-latest"
     ]
 
+    # Try each model
     for model_name in models_to_try:
 
-        for attempt in range(2):
+        # Try each model up to 3 times
+        for attempt in range(3):
 
             try:
+
+                print(
+                    f"Trying {model_name} "
+                    f"(attempt {attempt + 1}/3)"
+                )
+
                 response = client.models.generate_content(
                     model=model_name,
                     contents=prompt,
@@ -69,31 +83,54 @@ User message:
                     )
                 )
 
+                if not response.text:
+                    raise ValueError("Empty response from Gemini")
+
                 result = json.loads(response.text)
 
                 if result and result.get("emotion"):
+
+                    print(
+                        f"Success: {model_name} "
+                        f"on attempt {attempt + 1}"
+                    )
+
                     return jsonify(result)
 
+                raise ValueError(
+                    "Gemini returned invalid JSON structure"
+                )
+
             except Exception as e:
+
                 print(
                     f"{model_name} attempt "
                     f"{attempt + 1} failed: {e}"
                 )
-                time.sleep(1.5)
+
+                # Wait before retrying
+                if attempt < 2:
+                    time.sleep(2)
+
+        print(
+            f"{model_name} unavailable. "
+            f"Trying next model..."
+        )
+
+    # Only reached if every model and retry failed
+    print("All Gemini models failed.")
 
     return jsonify({
-        "emotion": "neutral",
-        "confidence": 0.4,
-        "intensity": "Low",
-        "intent": "General",
-        "tone": "Plain",
-        "priority": "Balanced",
-        "response": "The analysis service is temporarily unavailable. Please try again."
-    })
+        "error": "analysis_unavailable",
+        "message": "The analysis service is temporarily unavailable."
+    }), 503
 
 
 if __name__ == "__main__":
-    port = int(os.environ.get("PORT", 10000))
+
+    port = int(
+        os.environ.get("PORT", 10000)
+    )
 
     app.run(
         host="0.0.0.0",
