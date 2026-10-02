@@ -4,10 +4,12 @@ import json
 import time
 
 from flask import Flask, request, jsonify, send_from_directory
+from flask_cors import CORS
 from google import genai
 from google.genai import types
 
 app = Flask(__name__)
+CORS(app)
 
 client = genai.Client(
     api_key=os.environ["GEMINI_API_KEY"]
